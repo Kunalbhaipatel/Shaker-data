@@ -62,7 +62,7 @@ if uploaded_file:
 
     with col2:
         st.markdown("**2. SLI (Solids Loading Index) vs Time**")
-                fig_sli = px.line(df.reset_index(), x="Datetime", y="SLI", title="SLI vs Time")
+        fig_sli = px.line(df.reset_index(), x="Datetime", y="SLI", title="SLI vs Time")
         fig_sli.add_hline(y=1.2, line_dash="dash", line_color="red")
         fig_sli.add_hline(y=1.5, line_dash="dash", line_color="purple")
         st.plotly_chart(fig_sli, use_container_width=True)
