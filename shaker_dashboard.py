@@ -1,4 +1,4 @@
-# Streamlit Pipeline for Shaker Screen Monitoring
+# Streamlit Pipeline for Shaker Screen Monitoring (Optimized for Large Files)
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -17,25 +17,31 @@ st.title("🛠️ Shaker Performance Monitor")
 uploaded_file = st.file_uploader("Upload your CSV", type=["csv"])
 
 if uploaded_file:
+    row_limit = st.number_input("Rows to load (latest)", min_value=1000, max_value=100000, value=20000, step=1000)
+    required_cols = [
+        "YYYY/MM/DD", "HH:MM:SS", "Rate Of Penetration (ft_per_hr)", "Mud Density (lbs_per_gal)",
+        "SHAKER #1 (Units)", "Pump 1 strokes/min (SPM)", "Pump 2 strokes/min (SPM)", "Pump 3 strokes/min (SPM)"
+    ]
+
     try:
-        df = pd.read_csv(uploaded_file, low_memory=False)
+        total_rows = sum(1 for _ in uploaded_file) - 1
+        uploaded_file.seek(0)
+        skip = max(1, total_rows - row_limit)
+        df = pd.read_csv(uploaded_file, usecols=required_cols, skiprows=range(1, skip+1), low_memory=False)
         df.replace(-999.25, np.nan, inplace=True)
-        if "YYYY/MM/DD" in df.columns and "HH:MM:SS" in df.columns:
-            df["Datetime"] = pd.to_datetime(df["YYYY/MM/DD"].astype(str) + " " + df["HH:MM:SS"].astype(str), errors="coerce")
-        else:
-            df["Datetime"] = pd.to_datetime(df.iloc[:, 0].astype(str) + " " + df.iloc[:, 1].astype(str), errors="coerce")
+        df["Datetime"] = pd.to_datetime(df["YYYY/MM/DD"].astype(str) + " " + df["HH:MM:SS"].astype(str), errors="coerce")
         df.set_index("Datetime", inplace=True)
         df = df.sort_index()
     except Exception as e:
         st.error(f"Error loading file: {e}")
         st.stop()
 
-    df["ROP"] = pd.to_numeric(df.get('Rate Of Penetration (ft_per_hr)', np.nan), errors='coerce')
-    df["Mud Density"] = pd.to_numeric(df.get('Mud Density (lbs_per_gal)', np.nan), errors='coerce')
-    df["Shaker"] = pd.to_numeric(df.get('SHAKER #1 (Units)', np.nan), errors='coerce')
-    df["Pumps"] = pd.to_numeric(df.get('Pump 1 strokes/min (SPM)', np.nan), errors='coerce') + \
-                  pd.to_numeric(df.get('Pump 2 strokes/min (SPM)', np.nan), errors='coerce') + \
-                  pd.to_numeric(df.get('Pump 3 strokes/min (SPM)', np.nan), errors='coerce')
+    df["ROP"] = pd.to_numeric(df["Rate Of Penetration (ft_per_hr)"], errors='coerce')
+    df["Mud Density"] = pd.to_numeric(df["Mud Density (lbs_per_gal)"], errors='coerce')
+    df["Shaker"] = pd.to_numeric(df["SHAKER #1 (Units)"], errors='coerce')
+    df["Pumps"] = pd.to_numeric(df["Pump 1 strokes/min (SPM)"], errors='coerce') + \
+                  pd.to_numeric(df["Pump 2 strokes/min (SPM)"], errors='coerce') + \
+                  pd.to_numeric(df["Pump 3 strokes/min (SPM)"], errors='coerce')
 
     df["Solids_Load"] = df["ROP"] * df["Mud Density"]
     df["SLI"] = df["Solids_Load"] / (df["Shaker"] + 1)
