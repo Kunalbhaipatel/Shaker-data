@@ -3,13 +3,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-import seaborn as sns
-import joblib
 import time
 
 st.set_page_config(page_title="Shaker Screen Monitor", layout="wide")
@@ -54,45 +47,25 @@ if uploaded_file:
     if df["Overload"].any():
         st.error("⚠️ Overload Detected")
 
-    # Add simple generic feedback from pattern analysis
-    st.subheader("📝 ML-Based Operational Insight")
-    with st.expander("View Auto Comments"):
-        overload_pct = df["Overload"].mean() * 100
-        sli_avg = df["SLI"].mean()
-        if overload_pct > 5:
-            st.warning(f"⚠️ High overload frequency detected: {overload_pct:.1f}% of samples")
-        else:
-            st.success(f"✅ Overload frequency is under control: {overload_pct:.1f}%")
+    # Customized Insight Section
+    st.subheader("📋 Operational Recommendations Log")
+    with st.expander("Real-time Suggestions per Timestamp"):
+        comments = []
+        for timestamp, row in df.iterrows():
+            msg = []
+            if pd.notna(row["SLI"]) and row["SLI"] > 1.5:
+                msg.append("High SLI — possible solids overload.")
+            if pd.notna(row["Shaker"]) and row["Shaker"] > 250:
+                msg.append("Shaker vibration high — check for worn screen.")
+            if pd.notna(row["Pumps"]) and row["Pumps"] > 90:
+                msg.append("High GPM load — monitor flow rate.")
+            if pd.notna(row["Shaker"]) and row["Shaker"] < 30:
+                msg.append("Shaker output low — check tensioning or blinding.")
+            if len(msg) == 0:
+                msg.append("✔ Normal performance.")
+            comments.append((timestamp, " | ".join(msg)))
 
-        if sli_avg > 1.0:
-            st.info(f"ℹ️ Average SLI suggests moderately high solid loading: SLI ≈ {sli_avg:.2f}")
-        else:
-            st.info(f"✅ SLI within safe operational range: SLI ≈ {sli_avg:.2f}")
-
-    st.subheader("Train ML Model")
-    with st.expander("Train model"):
-        df["Target"] = df["Overload"].astype(int)
-        model_df = df[["ROP", "Mud Density", "Pumps", "SLI", "Shaker", "Target"]].dropna()
-        X = model_df.drop("Target", axis=1)
-        y = model_df["Target"]
-
-        if len(model_df) < 100:
-            st.warning("Not enough data points to train model.")
-        else:
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
-
-            model = Pipeline([
-                ("scale", StandardScaler()),
-                ("rf", RandomForestClassifier(n_estimators=100, random_state=0))
-            ])
-            with st.spinner("Training model..."):
-                time.sleep(1)
-                model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-
-            st.code(classification_report(y_test, y_pred), language="text")
-            joblib.dump(model, "shaker_model.pkl")
-            with open("shaker_model.pkl", "rb") as f:
-                st.download_button("Download Model", f, "shaker_model.pkl")
+        comments_df = pd.DataFrame(comments, columns=["Timestamp", "Recommendation"])
+        st.dataframe(comments_df, use_container_width=True)
 else:
     st.info("Upload a CSV file to begin.")
