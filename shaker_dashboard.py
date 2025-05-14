@@ -55,14 +55,14 @@ if uploaded_file:
     with col1:
         st.markdown("**1. Shaker Output vs Time**")
         import plotly.express as px
-        fig_shaker = px.line(df.reset_index(), x="Datetime", y="Shaker", title="Shaker Output vs Time")
+        fig_shaker = px.line(df.reset_index(), x="Datetime", y="Shaker", title="Shaker Output vs Time", hover_data=["ROP", "Mud Density", "SLI", "Pumps"])
         fig_shaker.add_hline(y=250, line_dash="dash", line_color="red")
         fig_shaker.add_hline(y=30, line_dash="dash", line_color="orange")
         st.plotly_chart(fig_shaker, use_container_width=True)
 
     with col2:
         st.markdown("**2. SLI (Solids Loading Index) vs Time**")
-        fig_sli = px.line(df.reset_index(), x="Datetime", y="SLI", title="SLI vs Time")
+        fig_sli = px.line(df.reset_index(), x="Datetime", y="SLI", title="SLI vs Time", hover_data=["ROP", "Mud Density", "Shaker", "Pumps"])
         fig_sli.add_hline(y=1.2, line_dash="dash", line_color="red")
         fig_sli.add_hline(y=1.5, line_dash="dash", line_color="purple")
         st.plotly_chart(fig_sli, use_container_width=True)
@@ -70,11 +70,11 @@ if uploaded_file:
     col3, col4 = st.columns(2)
     with col3:
         st.markdown("**3. Combined Load Effects (ROP × Mud Density)**")
-        fig_solids = px.line(df.reset_index(), x="Datetime", y="Solids_Load", title="Combined Load Effects (ROP × Mud Density)")
+        fig_solids = px.line(df.reset_index(), x="Datetime", y="Solids_Load", title="Combined Load Effects (ROP × Mud Density)", hover_data=["ROP", "Mud Density"])
         st.plotly_chart(fig_solids, use_container_width=True)
     with col4:
         st.markdown("**4. Pumping Load vs SLI**")
-        fig_scatter = px.scatter(df, x="Pumps", y="SLI", title="Pumping Load vs SLI", opacity=0.6, color_discrete_sequence=['purple'])
+        fig_scatter = px.scatter(df, x="Pumps", y="SLI", title="Pumping Load vs SLI", opacity=0.6, color_discrete_sequence=['purple'], hover_data=["ROP", "Mud Density", "Shaker"])
         st.plotly_chart(fig_scatter, use_container_width=True)
 
     if df["Overload"].any():
