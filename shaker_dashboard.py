@@ -114,7 +114,7 @@ if uploaded_file:
         for timestamp, row in df.iterrows():
             msg = []
             if pd.notna(row.get("Alert_Score")) and row["Alert_Score"] > 0.7:
-                msg.append(f"🚨 Screen overload risk ({row['Alert_Score']:.2f}) — consider adjusting deck angle or screen tension. Notify mud engineer.")
+                msg.append(f"🚨 Screen overload risk ({row['Alert_Score']:.2f}): SLI={row['SLI']:.2f}, GPM={row['Pumps']:.0f}, Shaker={row['Shaker']:.0f}. Recommendation: Reduce flow rate or change screen if SLI remains >1.5.")
             if pd.notna(row["SLI"]) and row["SLI"] > 1.5:
                 msg.append("High SLI — possible solids overload.")
             if pd.notna(row["Shaker"]) and row["Shaker"] > 250:
