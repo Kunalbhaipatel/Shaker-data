@@ -101,7 +101,11 @@ if uploaded_file:
                 df.loc[model_df.index, "Alert_Score"] = 0.0  # fallback in case of binary single column
             joblib.dump(model, "shaker_alert_model.pkl")
             st.success("Model trained and alert scores added to data.")
-            st.code(classification_report(y_test, model.predict(X_test)), language="text")
+                        st.code(classification_report(y_test, model.predict(X_test)), language="text")
+            st.markdown("### 🔍 Alert Score Distribution")
+            import plotly.express as px
+            fig_alerts = px.histogram(df.loc[model_df.index], x="Alert_Score", nbins=20, title="Alert Score Distribution", color_discrete_sequence=['indianred'])
+            st.plotly_chart(fig_alerts, use_container_width=True)
 
     st.subheader("📋 Operational Recommendations Log")
     with st.expander("Real-time Suggestions per Timestamp"):
