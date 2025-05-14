@@ -3,7 +3,13 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import joblib
 import time
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
 
 st.set_page_config(page_title="Shaker Screen Monitor", layout="wide")
 st.title("🛠️ Shaker Performance Monitor")
@@ -40,19 +46,82 @@ if uploaded_file:
 
     df["Solids_Load"] = df["ROP"] * df["Mud Density"]
     df["SLI"] = df["Solids_Load"] / (df["Shaker"] + 1)
-
-    st.line_chart(df[["Shaker", "SLI"]].dropna())
-
     df["Overload"] = (df["SLI"] > 1.2)
+
+    st.subheader("📊 Technical Visualizations")
+    st.markdown("Use these visuals to understand performance and stress trends.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**1. Shaker Output vs Time**")
+        fig_shaker, ax_shaker = plt.subplots()
+        ax_shaker.plot(df.index, df["Shaker"], label="Shaker Output", color="blue")
+        ax_shaker.axhline(y=250, color='red', linestyle='--', label='High Threshold (250)')
+        ax_shaker.axhline(y=30, color='orange', linestyle='--', label='Low Threshold (30)')
+        ax_shaker.set_ylabel("Shaker Output")
+        ax_shaker.set_title("Shaker Output vs Time")
+        ax_shaker.legend()
+        ax_shaker.grid(True)
+        st.pyplot(fig_shaker)
+
+    with col2:
+        st.markdown("**2. SLI (Solids Loading Index) vs Time**")
+        fig_sli, ax_sli = plt.subplots()
+        ax_sli.plot(df.index, df["SLI"], label="SLI", color="green")
+        ax_sli.axhline(y=1.2, color='red', linestyle='--', label='Overload Threshold (1.2)')
+        ax_sli.axhline(y=1.5, color='purple', linestyle='--', label='Critical SLI (1.5)')
+        ax_sli.set_ylabel("SLI")
+        ax_sli.set_title("SLI vs Time")
+        ax_sli.legend()
+        ax_sli.grid(True)
+        st.pyplot(fig_sli)
+
+    st.markdown("**3. Combined Load Effects (ROP × Mud Density)**")
+    fig1, ax1 = plt.subplots()
+    ax1.plot(df.index, df["Solids_Load"], color='brown', label="Solids Load")
+    ax1.set_ylabel("Solids Load")
+    ax1.set_title("Solids Load Trend")
+    ax1.grid(True)
+    st.pyplot(fig1)
+
+    st.markdown("**4. Pumping Load vs SLI**")
+    fig2, ax2 = plt.subplots()
+    ax2.scatter(df["Pumps"], df["SLI"], alpha=0.6, color='purple')
+    ax2.set_xlabel("Combined Pump Strokes")
+    ax2.set_ylabel("SLI")
+    ax2.set_title("Pump Load vs SLI")
+    ax2.grid(True)
+    st.pyplot(fig2)
+
     if df["Overload"].any():
         st.error("⚠️ Overload Detected")
 
-    # Customized Insight Section
+    st.subheader("⚙️ Train Trigger Model")
+    with st.expander("Train ML model for alert scoring"):
+        df["Target"] = df["Overload"].astype(int)
+        model_df = df[["ROP", "Mud Density", "Pumps", "SLI", "Shaker", "Target"]].dropna()
+        X = model_df.drop("Target", axis=1)
+        y = model_df["Target"]
+
+        if len(model_df) >= 100:
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+            model = Pipeline([
+                ("scale", StandardScaler()),
+                ("rf", RandomForestClassifier(n_estimators=100, random_state=0))
+            ])
+            model.fit(X_train, y_train)
+            df["Alert_Score"] = model.predict_proba(X)[:, 1]
+            joblib.dump(model, "shaker_alert_model.pkl")
+            st.success("Model trained and alert scores added to data.")
+            st.code(classification_report(y_test, model.predict(X_test)), language="text")
+
     st.subheader("📋 Operational Recommendations Log")
     with st.expander("Real-time Suggestions per Timestamp"):
         comments = []
         for timestamp, row in df.iterrows():
             msg = []
+            if pd.notna(row.get("Alert_Score")) and row["Alert_Score"] > 0.7:
+                msg.append(f"🚨 ML Alert Triggered: Score {row['Alert_Score']:.2f}")
             if pd.notna(row["SLI"]) and row["SLI"] > 1.5:
                 msg.append("High SLI — possible solids overload.")
             if pd.notna(row["Shaker"]) and row["Shaker"] > 250:
