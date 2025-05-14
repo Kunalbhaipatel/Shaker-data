@@ -85,8 +85,7 @@ if uploaded_file:
         ax1.set_title("Solids Load Trend")
         ax1.grid(True)
         st.pyplot(fig1)
-
-                with col4:
+    with col4:
         st.markdown("**4. Pumping Load vs SLI**")
         fig2, ax2 = plt.subplots(figsize=(6, 4))
         ax2.scatter(df["Pumps"], df["SLI"], alpha=0.6, color='purple')
