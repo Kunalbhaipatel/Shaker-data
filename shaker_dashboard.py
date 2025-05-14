@@ -54,46 +54,28 @@ if uploaded_file:
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("**1. Shaker Output vs Time**")
-        fig_shaker, ax_shaker = plt.subplots()
-        ax_shaker.plot(df.index, df["Shaker"], label="Shaker Output", color="blue")
-        ax_shaker.axhline(y=250, color='red', linestyle='--', label='High Threshold (250)')
-        ax_shaker.axhline(y=30, color='orange', linestyle='--', label='Low Threshold (30)')
-        ax_shaker.set_ylabel("Shaker Output")
-        ax_shaker.set_title("Shaker Output vs Time")
-        ax_shaker.legend()
-        ax_shaker.grid(True)
-        st.pyplot(fig_shaker)
+        import plotly.express as px
+        fig_shaker = px.line(df.reset_index(), x="Datetime", y="Shaker", title="Shaker Output vs Time")
+        fig_shaker.add_hline(y=250, line_dash="dash", line_color="red")
+        fig_shaker.add_hline(y=30, line_dash="dash", line_color="orange")
+        st.plotly_chart(fig_shaker, use_container_width=True)
 
     with col2:
         st.markdown("**2. SLI (Solids Loading Index) vs Time**")
-        fig_sli, ax_sli = plt.subplots()
-        ax_sli.plot(df.index, df["SLI"], label="SLI", color="green")
-        ax_sli.axhline(y=1.2, color='red', linestyle='--', label='Overload Threshold (1.2)')
-        ax_sli.axhline(y=1.5, color='purple', linestyle='--', label='Critical SLI (1.5)')
-        ax_sli.set_ylabel("SLI")
-        ax_sli.set_title("SLI vs Time")
-        ax_sli.legend()
-        ax_sli.grid(True)
-        st.pyplot(fig_sli)
+                fig_sli = px.line(df.reset_index(), x="Datetime", y="SLI", title="SLI vs Time")
+        fig_sli.add_hline(y=1.2, line_dash="dash", line_color="red")
+        fig_sli.add_hline(y=1.5, line_dash="dash", line_color="purple")
+        st.plotly_chart(fig_sli, use_container_width=True)
 
     col3, col4 = st.columns(2)
     with col3:
         st.markdown("**3. Combined Load Effects (ROP × Mud Density)**")
-        fig1, ax1 = plt.subplots(figsize=(6, 4))
-        ax1.plot(df.index, df["Solids_Load"], color='brown', label="Solids Load")
-        ax1.set_ylabel("Solids Load")
-        ax1.set_title("Solids Load Trend")
-        ax1.grid(True)
-        st.pyplot(fig1)
+        fig_solids = px.line(df.reset_index(), x="Datetime", y="Solids_Load", title="Combined Load Effects (ROP × Mud Density)")
+        st.plotly_chart(fig_solids, use_container_width=True)
     with col4:
         st.markdown("**4. Pumping Load vs SLI**")
-        fig2, ax2 = plt.subplots(figsize=(6, 4))
-        ax2.scatter(df["Pumps"], df["SLI"], alpha=0.6, color='purple')
-        ax2.set_xlabel("Combined Pump Strokes")
-        ax2.set_ylabel("SLI")
-        ax2.set_title("Pump Load vs SLI")
-        ax2.grid(True)
-        st.pyplot(fig2)
+        fig_scatter = px.scatter(df, x="Pumps", y="SLI", title="Pumping Load vs SLI", opacity=0.6, color_discrete_sequence=['purple'])
+        st.plotly_chart(fig_scatter, use_container_width=True)
 
     if df["Overload"].any():
         st.error("⚠️ Overload Detected")
@@ -127,7 +109,7 @@ if uploaded_file:
         for timestamp, row in df.iterrows():
             msg = []
             if pd.notna(row.get("Alert_Score")) and row["Alert_Score"] > 0.7:
-                msg.append(f"🚨 ML Alert Triggered: Score {row['Alert_Score']:.2f}")
+                msg.append(f"🚨 Screen overload risk ({row['Alert_Score']:.2f}) — consider adjusting deck angle or screen tension. Notify mud engineer.")
             if pd.notna(row["SLI"]) and row["SLI"] > 1.5:
                 msg.append("High SLI — possible solids overload.")
             if pd.notna(row["Shaker"]) and row["Shaker"] > 250:
