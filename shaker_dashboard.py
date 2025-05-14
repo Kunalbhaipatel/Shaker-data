@@ -79,24 +79,20 @@ if uploaded_file:
     col3, col4 = st.columns(2)
     with col3:
         st.markdown("**3. Combined Load Effects (ROP × Mud Density)**")
-        fig1, ax1 = plt.subplots(figsize=(6, 4))
-    fig1, ax1 = plt.subplots(figsize=(6, 4))
-    ax1.plot(df.index, df["Solids_Load"], color='brown', label="Solids Load")
-    ax1.set_ylabel("Solids Load")
-    ax1.set_title("Solids Load Trend")
-    ax1.grid(True)
-    st.pyplot(fig1)
+                ax1.plot(df.index, df["Solids_Load"], color='brown', label="Solids Load")
+        ax1.set_ylabel("Solids Load")
+        ax1.set_title("Solids Load Trend")
+        ax1.grid(True)
+        st.pyplot(fig1)
 
-        with col4:
+            with col4:
         st.markdown("**4. Pumping Load vs SLI**")
-        fig2, ax2 = plt.subplots(figsize=(6, 4))
-    fig2, ax2 = plt.subplots(figsize=(6, 4))
-    ax2.scatter(df["Pumps"], df["SLI"], alpha=0.6, color='purple')
-    ax2.set_xlabel("Combined Pump Strokes")
-    ax2.set_ylabel("SLI")
-    ax2.set_title("Pump Load vs SLI")
-    ax2.grid(True)
-    st.pyplot(fig2)
+                ax2.scatter(df["Pumps"], df["SLI"], alpha=0.6, color='purple')
+        ax2.set_xlabel("Combined Pump Strokes")
+        ax2.set_ylabel("SLI")
+        ax2.set_title("Pump Load vs SLI")
+        ax2.grid(True)
+        st.pyplot(fig2)
 
     if df["Overload"].any():
         st.error("⚠️ Overload Detected")
