@@ -76,7 +76,10 @@ if uploaded_file:
         ax_sli.grid(True)
         st.pyplot(fig_sli)
 
-    st.markdown("**3. Combined Load Effects (ROP × Mud Density)**")
+    col3, col4 = st.columns(2)
+    with col3:
+        st.markdown("**3. Combined Load Effects (ROP × Mud Density)**")
+        fig1, ax1 = plt.subplots(figsize=(6, 4))
     fig1, ax1 = plt.subplots(figsize=(6, 4))
     ax1.plot(df.index, df["Solids_Load"], color='brown', label="Solids Load")
     ax1.set_ylabel("Solids Load")
@@ -84,7 +87,9 @@ if uploaded_file:
     ax1.grid(True)
     st.pyplot(fig1)
 
-    st.markdown("**4. Pumping Load vs SLI**")
+        with col4:
+        st.markdown("**4. Pumping Load vs SLI**")
+        fig2, ax2 = plt.subplots(figsize=(6, 4))
     fig2, ax2 = plt.subplots(figsize=(6, 4))
     ax2.scatter(df["Pumps"], df["SLI"], alpha=0.6, color='purple')
     ax2.set_xlabel("Combined Pump Strokes")
@@ -112,9 +117,9 @@ if uploaded_file:
             model.fit(X_train, y_train)
             probs = model.predict_proba(X)
             if probs.shape[1] > 1:
-                df["Alert_Score"] = probs[:, 1]
+                df.loc[model_df.index, "Alert_Score"] = probs[:, 1]
             else:
-                df["Alert_Score"] = 0.0  # fallback in case of binary single column
+                df.loc[model_df.index, "Alert_Score"] = 0.0  # fallback in case of binary single column
             joblib.dump(model, "shaker_alert_model.pkl")
             st.success("Model trained and alert scores added to data.")
             st.code(classification_report(y_test, model.predict(X_test)), language="text")
